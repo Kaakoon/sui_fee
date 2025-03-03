@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta http-equiv="Content-Style-Type" content="text/css">
+	<meta http-equiv="Content-Script-Type" content="text/javascript">
+	<meta http-equiv="Content-Language" content="ja">
+
+	<!-- viewportのメタタグを残しておかないとなんとなく死にます -->
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+	<title>チャットノベル　サンプル</title>
+
+	<!-- Google フォント　任意で -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Emoji:wght@300..700&display=swap" rel="stylesheet">
+
+	<!-- スタイルシート 外付け化も可 -->
+	<style>
+		/* ギミック以外の外の枠組み設定 */
+		body{
+		margin:0;
+		padding:0;
+		background-color:#fff;
+		}
+		.wrapper{
+		width:650px;
+		margin:auto;
+		padding:0;
+		font-family: sans-serif;
+		}
+		
+		/* ※画面幅が650pxより小さいとき */
+		@media screen and (max-width: 650px) {
+		.wrapper{
+		width:100%;
+		margin:0;
+		}
+		}
+		
+		/* 背景・シーン設定 */
+		.chat{
+		/* チャット部分 */
+		margin:0;
+		padding:50px 15px;
+		background-color:#7C95C0;
+		}
+		
+		.real{
+		/* リアルトーク部分 */
+		margin:0;
+		padding:50px 15px;
+		background-color:rgba(0,0,0,1);
+		}
+		
+		/* 顔アイコンの個別スタイル設定 */
+		span.kawata::before,span.kawata::after {
+		background-image: url("kawata.png");
+		}
+		span.yasu::before,span.yasu::after {
+		background-image: url("yasu.png");
+		}
+		
+		/* 名前欄のスタイル */
+		.name{
+		font-weight:bold;
+		color:#fff;
+		font-size: .8rem;
+		position: absolute;
+		top: -25px;
+		left: 50px;
+		}
+		/* 顔アイコン（左配置時） */
+		.name::before {
+		content: url("1x1.png");
+		vertical-align: middle;
+		padding-right: 5px;
+		width:40px;
+		height:45px;
+		border-radius: 50%;
+		background-size: cover;
+		background-repeat: no-repeat;
+		background-position: center;
+		position: absolute;
+		top: -5px;
+		left: -50px;
+		}
+		
+		/* 吹き出しのスタイル */
+		.line{
+		max-width:274px;
+		display: inline-block;
+		}
+		.fukidashi{
+		border-radius: 10px;
+		padding: 10px 16px;
+		margin:0 0 0 30px;
+		font-size: .95rem;
+		letter-spacing:0.5;
+		white-space: break-spaces;
+		word-break: break-all;
+		line-height:1.4;
+		z-index: 0;
+		display:inline-block;
+		}
+		
+		/* 吹き出しの個別スタイル */
+		/* リアル-主人公 */
+		div.real .another-fade {
+		margin-top:1.5rem;
+		padding-bottom: 20px;
+		display:flex;
+		justify-content: flex-end;
+		}
+		div.real .another-fade .fukidashi{
+		margin:0 30px 0 0;
+		}
+		div.real .another-fade .name{
+		display:block;
+		top: -25px;
+		right: 47px;
+		text-align: right;
+		}
+		div.real .another-fade .name::before {
+		content: none;
+		}
+		div.real .another-fade .name::after {
+		content: url("1x1.png");
+		vertical-align: middle;
+		padding-right: 5px;
+		width:40px;
+		height:45px;
+		border-radius: 50%;
+		background-size: cover;
+		background-repeat: no-repeat;
+		background-position: center;
+		position: absolute;
+		top: -5px;
+		right: -47px;
+		}
+		div.real .another-fade p{
+		background-color:#fff;
+		}
+		
+		/* リアル-主人公-通話アイコン */
+		div.real .another-fade .action{
+		margin:0 50px 0 0;
+		border-radius: 20px;
+		}
+		div.real .another-fade .action:after{
+			content: "";
+			position: absolute;
+			width: 0;
+			height: 0;
+			right: 46px;
+			top: 0px;
+			border-style: solid;
+			border-color: transparent transparent transparent #fff;
+			border-width: 10px 0 10px 11.32px;
+			transform: rotate(84deg);
+		}
+		
+		/* チャット-主人公 */
+		div.chat .another-fade {
+		margin-top:1.5rem;
+		padding-bottom: 20px;
+		display:flex;
+		justify-content: flex-end;
+		}
+		
+		div.chat .another-fade .fukidashi{
+		margin:0 50px 0 0;
+		border-radius: 20px;
+		}
+		div.chat .another-fade .fukidashi:after{
+			content: "";
+			position: absolute;
+			width: 0;
+			height: 0;
+			right: 46px;
+			top: 0px;
+			border-style: solid;
+			border-color: transparent transparent transparent rgb(140, 224, 47);
+			border-width: 10px 0 10px 11.32px;
+			transform: rotate(84deg);
+		}
+		div.chat .another-fade .name{
+		display:block;
+		top: -25px;
+		right: 47px;
+		text-align: right;
+		}
+		div.chat .another-fade .name::before {
+		content: none;
+		}
+		div.chat .another-fade .name::after {
+		content: url("1x1.png");
+		vertical-align: middle;
+		padding-right: 5px;
+		width:40px;
+		height:45px;
+		border-radius: 50%;
+		background-size: cover;
+		background-repeat: no-repeat;
+		background-position: center;
+		position: absolute;
+		top: -5px;
+		right: -47px;
+		}
+		div.chat .another-fade p{
+		background-color:rgb(140, 224, 47);
+		}
+		
+		/* リアル-ゲスト */
+		div.real .fade {
+			margin-top:1.5rem;
+			padding-bottom: 20px;
+			position: relative;
+		}
+		div.real .fade p{
+			background-color:#fff;
+		}
+		/* リアル-ゲスト-通話アイコン */
+		div.real div.fade .action {
+		margin:0 0 0 50px;
+		border-radius: 20px;
+		}
+		div.real div.fade .action:before{
+			content: "";
+			position: absolute;
+			width: 0;
+			height: 0;
+			left: 46px;
+			top: 0px;
+			border-style: solid;
+			border-color: transparent transparent transparent #fff;
+			border-width: 10px 0 10px 11.32px;
+			transform: rotate(95deg);
+		}
+		
+		/* チャット-ゲスト */
+		div.chat .fade {
+			margin-top:1.5rem;
+			padding-bottom: 20px;
+			position: relative;
+		}
+		div.chat div.fade .fukidashi {
+		margin:0 0 0 50px;
+		border-radius: 20px;
+		}
+		div.chat div.fade .fukidashi:before{
+			content: "";
+			position: absolute;
+			width: 0;
+			height: 0;
+			left: 46px;
+			top: 0px;
+			border-style: solid;
+			border-color: transparent transparent transparent #fff;
+			border-width: 10px 0 10px 11.32px;
+			transform: rotate(95deg);
+		}
+		div.chat div.fade p{
+			background-color:#fff;
+		}
+		
+		/* 通話・SNSアイコン風 */
+		.action{
+		line-height: 1.2;
+		white-space: pre-wrap;
+		text-align:center;
+		font-style: normal;
+		font-weight: 700;
+		min-width:70px;
+		}
+		.emoji {
+		font-family: "Noto Emoji", sans-serif;
+		font-optical-sizing: none;
+		font-size: 2rem;
+		}
+		.under_emo1{
+		font-family: sans-serif;
+		font-size: .7rem;
+		}
+		.under_emo2{
+		font-family: sans-serif;
+		font-size: .7rem;
+		}
+		
+		/* ポップアップ基本 */
+		.move {
+		margin: 1.5rem 0 4rem;
+			padding-bottom: 20px;
+			padding: 16px;
+			line-height: 1.5;
+			white-space: pre-wrap;
+		text-align:center;
+		}
+		/* 下地なし 白字 */
+		.w1{
+		color:#fff;
+		}
+		/* 下地黒 白字 */
+		.w2 {
+			color: rgb(250, 250, 250, 1);
+			background-color: rgb(49, 50, 56, 0.8);
+			border-radius: 8px;
+		}
+		/* 下地なし 黒字 */
+		.b1{
+		color:#000;
+		}
+		/* 下地白 黒字 */
+		.b2{
+		color: rgb(0, 0, 0, 1);
+		background-color: rgb(255, 255, 255, 0.8);
+			border-radius: 8px;
+		}
+		/* SNSバナー風 */
+		.sns{
+		background-color: rgb(255, 255, 255, 1);
+		background-image: url("sns.png");
+		background-size: 25px;
+		background-repeat: no-repeat;
+		background-position: 7px 7px;
+		border-radius: 8px;
+		padding: 9px 10px;
+		text-align:left;
+		margin-bottom: 4rem;
+		font-family: sans-serif;
+		vertical-align: top;
+		}
+		.snstitle{
+		/* SNSバナータイトル部分 */
+		display:block;
+		padding-left:27px;
+		font-size: .9rem;
+		}
+		.snssub{
+		/* SNSバナー本文部分 */
+		display:block;
+		font-size: .9rem;
+		padding: 7px 0px;
+		color:#888;
+		}
+		
+		/* .fadeの挙動スタイル */
+		/* 左から右へ。ゲスト全般 */
+		.fade {
+		/* 追加のスタイルをここに記述 */
+			opacity: 0;
+			transform: translateX(-15px);
+			transition: opacity 1s, transform 0.5s;
+		}
+		.fade.active {
+		/* 追加のアクティブ時のスタイルをここに記述 */
+			opacity: 1;
+			transform: translateX(0px);
+		}
+		
+		/* .another-fadeの挙動スタイル */
+		/* .右から左へ。主人公 */
+		.another-fade {
+		/* 追加のスタイルをここに記述 */
+			opacity: 0;
+			transform: translateX(15px);
+			transition: opacity 1s, transform 0.5s;
+		}
+		.another-fade.active {
+		/* 追加のアクティブ時のスタイルをここに記述 */
+			opacity: 1;
+			transform: translateX(0px);
+		}
+		
+		/* 追加のクラス1の挙動スタイル */
+		/* 下から上へ。効果音ポップアップ */
+		.additional-fade-1 {
+		/* 追加のスタイルをここに記述 */
+			opacity: 0;
+			transform: translateY(50px);
+			transition: opacity 1s, transform 0.5s;
+		}
+		.additional-fade-1.active {
+		/* 追加のアクティブ時のスタイルをここに記述 */
+			opacity: 1;
+			transform: translatey(0px);
+		}
+		
+		/* 追加のクラス2のスタイル */
+		/* 下から上へ。SNSバナー風 */
+		.additional-fade-2 {
+		/* 追加のスタイルをここに記述 */
+			opacity: 0;
+			transform: translateY(50px);
+			transition: opacity 1s, transform 0.5s;
+		}
+		.additional-fade-2.active {
+		/* 追加のアクティブ時のスタイルをここに記述 */
+			opacity: 1;
+			transform: translatey(0px);
+		}
+		/* 追加のクラス3のスタイル */
+		/* 右から左へ。使ってないので一旦空にする */
+		.additional-fade-3 {
+		/* 追加のスタイルをここに記述 */
+		}
+		.additional-fade-3.active {
+		/* 追加のアクティブ時のスタイルをここに記述 */
+		}
+		
+		/* 以下、背景用処理 */
+		.wrapper .real {
+		position: relative;
+		z-index: 1;
+		}
+		.wrapper .parallax-bg {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+		overflow:clip;
+		}
+		.wrapper .parallax-bg .bg {
+		background: no-repeat center center/cover;
+		width: 100%;
+		height: 100vh;
+		position: sticky;
+		top: 0;
+		z-index: -1;
+		}
+		.wrapper .parallax-bg .bg1 {
+		background-image: url("bg1.png");
+		}
+		.wrapper .parallax-bg .bg2 {
+		background-image: url("bg2.png");
+		}
+	</style>
+
+	<!-- 以下JavaScript 外付け化も可-->
+	<script>
+		window.addEventListener('scroll', function() {
+			const elements = document.querySelectorAll('.fade, .another-fade, .additional-fade-1, .additional-fade-2, .additional-fade-3');
+			const window_height = window.innerHeight;
+		
+			for (let i = 0; i < elements.length; i++) {
+			 const element_height = elements[i].getBoundingClientRect().bottom;
+		
+			 if (element_height < window_height * 0.8) {
+			     elements[i].classList.add('active');
+			 } 
+			}
+		});
+	</script>
+
+</head>
+
+<body>
+<br>
+このへんは各自任意で作ってください。ここのスペースを広く取っておくと文字の出現まで間を稼げます。<br>
+HTML構造、CSS、JavaScriptは全て本ファイルのコード内におさめてあります。<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+	<div class="wrapper parallax-sticky">
+		<div class="chat">
+			<div class="fade">
+				<p class="fukidashi"><span class="name kawata">川田</span><span class="line">あ、こんにちは</span></p>
+			</div>
+			<div class="another-fade">
+				<p class="fukidashi"><span class="name yasu">ヤス</span><span class="line">こんにちはー</span></p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move w1">ぽいーん！</p>
+			</div>
+			<div class="fade">
+				<p class="fukidashi action"><span class="name kawata">川田</span><span class="line emoji">📞</span><br><span class="line under_emo1">着信</span></p>
+			</div>
+			<div class="another-fade">
+				<p class="fukidashi action"><span class="name yasu">ヤス</span><span class="line emoji">📞</span><br><span class="line under_emo1">通話終了</span><br><span class="line under_emo2">1:32:45</span></p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move w1">ぽいーん！</p>
+			</div>
+		</div>
+		<div class="real">
+			<div class="fade">
+				<p class="fukidashi"><span class="name kawata">川田</span><span class="line">あ、こんにちは</span></p>
+			</div>
+			<div class="another-fade">
+				<p class="fukidashi"><span class="name yasu">ヤス</span><span class="line">こんにちはー</span></p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move w1">ぽいーん！</p>
+			</div>
+
+			<div class="fade">
+				<p class="fukidashi action"><span class="name kawata">川田</span><span class="line emoji">📞</span><br><span class="line under_emo1">着信</span></p>
+			</div>
+			<div class="another-fade">
+				<p class="fukidashi action"><span class="name yasu">ヤス</span><span class="line emoji">📞</span><br><span class="line under_emo1">通話終了</span><br><span class="line under_emo2">1:32:45</span></p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move w1">ぽいーん！</p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move w2">ぽいーん！</p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move b1">ぽいーん！</p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move b2">ぽいーん！</p>
+			</div>
+			<div class="fade">
+				<p class="fukidashi"><span class="name kawata">川田</span><span class="line">たくさん喋るテキストテキストテキストテキストテキストテキストテキストテキストテキスト</span></p>
+			</div>
+			<div class="another-fade">
+				<p class="fukidashi"><span class="name yasu">ヤス</span><span class="line">たくさん喋るテキストテキストテキストテキストテキストテキストテキストテキストテキスト</span></p>
+			</div>
+			<div class="parallax-bg"><!-- 背景用要素 -->
+				<div class="bg bg1"></div>
+			</div>
+		</div>
+		<div class="real">
+			<div class="fade">
+				<p class="fukidashi"><span class="name kawata">川田</span><span class="line">あ、こんにちは</span></p>
+			</div>
+			<div class="another-fade">
+				<p class="fukidashi"><span class="name yasu">ヤス</span><span class="line">こんにちはー</span></p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move sns"><span class="snstitle">SNSバナー</span><span class="snssub">こんな感じに出ます。コード上の隙間はトルツメしてください</span></p>
+			</div>
+			<div class="fade">
+				<p class="fukidashi"><span class="name kawata">川田</span><span class="line">あ、こんにちは</span></p>
+			</div>
+			<div class="another-fade">
+				<p class="fukidashi"><span class="name yasu">ヤス</span><span class="line">こんにちはー</span></p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move w1">ぽいーん！</p>
+			</div>
+			<div class="parallax-bg"><!-- 背景用要素 -->
+				<div class="bg bg2"></div>
+			</div>
+		</div>
+		<div class="chat">
+			<div class="fade">
+				<p class="fukidashi"><span class="name kawata">川田</span><span class="line">たくさん喋るテキストテキストテキストテキストテキストテキストテキストテキストテキスト</span></p>
+			</div>
+			<div class="another-fade">
+				<p class="fukidashi"><span class="name yasu">ヤス</span><span class="line">たくさん喋るテキストテキストテキストテキストテキストテキストテキストテキストテキスト</span></p>
+			</div>
+			<div class="additional-fade-1">
+				<p class="move w1">ぽいーん！</p>
+			</div>
+		</div>
+	</div>
+
+<br>
+このへんは各自任意で作ってください。<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+テキスト<br>
+<br>
+<br>
+
+</body>
+</html>
